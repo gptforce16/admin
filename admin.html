@@ -1,141 +1,135 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Menü Yönetim Paneli</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #f9f9f9;
-      padding: 20px;
-    }
-    h2 {
-      color: #d32f2f;
-    }
-    .menu-form, .menu-row {
-      background: #fff;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    input, button {
-      margin: 5px 0;
-      padding: 10px;
-      font-size: 15px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    button {
-      cursor: pointer;
-      background: #d32f2f;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      margin-top: 5px;
-    }
-    .delete-btn {
-      background: #777;
-    }
+    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
+    h2 { color: #b30000; }
+    .panel { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; margin-bottom: 20px; }
+    input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { cursor: pointer; }
+    .guncelle { background: #b30000; color: white; border: none; }
+    .sil { background: #666; color: white; border: none; }
   </style>
 </head>
 <body>
   <h2>Menü Yönetim Paneli</h2>
 
-  <div class="menu-form">
+  <div class="panel">
     <h3>Yeni Ürün Ekle</h3>
-    <input type="text" id="yeni-kategori" placeholder="Kategori">
-    <input type="text" id="yeni-baslik" placeholder="Başlık">
-    <input type="text" id="yeni-icerik" placeholder="İçerik">
-    <input type="number" id="yeni-fiyat" placeholder="Fiyat">
-    <button onclick="yeniUrunEkle()">Ürün Ekle</button>
+    <input type="text" id="kategori" placeholder="Kategori">
+    <input type="text" id="baslik" placeholder="Başlık">
+    <input type="text" id="icerik" placeholder="İçerik">
+    <input type="number" id="fiyat" placeholder="Fiyat">
+    <button class="guncelle" onclick="ekle()">Ürün Ekle</button>
   </div>
 
-  <div id="menu-list"></div>
+  <div id="menuListesi"></div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const supabaseUrl = 'https://qcrbbvokdkyjjfsgffau.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjcmJidm9rZGt5ampmc2dmZmF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMTc1MTAsImV4cCI6MjA2MDg5MzUxMH0.TLCqjWowPhDs1s_rQoYFLOKH4iVAc6SV2zECIcPOAfo';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    const supabase = createClient(
-      'https://qcrbbvokdkyjjfsgffau.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjcmJidm9rZGt5ampmc2dmZmF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMTc1MTAsImV4cCI6MjA2MDg5MzUxMH0.TLCqjWowPhDs1s_rQoYFLOKH4iVAc6SV2zECIcPOAfo'
-    )
+    async function ekle() {
+      const kategori = document.getElementById('kategori').value;
+      const baslik = document.getElementById('baslik').value;
+      const icerik = document.getElementById('icerik').value;
+      const fiyat = parseFloat(document.getElementById('fiyat').value);
 
-    async function menuYukle() {
-      const { data, error } = await supabase.from('menu').select('*').order('id')
-      const container = document.getElementById('menu-list')
-      container.innerHTML = ''
+      if (!kategori || !baslik || !icerik || isNaN(fiyat)) {
+        alert("Tüm alanları doldurunuz.");
+        return;
+      }
 
-      data.forEach(item => {
-        const div = document.createElement('div')
-        div.className = 'menu-row'
-        div.innerHTML = `
-          <input type="text" value="${item.kategori}" id="kategori-${item.id}">
-          <input type="text" value="${item.baslik}" id="baslik-${item.id}">
-          <input type="text" value="${item.icerik}" id="icerik-${item.id}">
-          <input type="number" value="${item.fiyat}" id="fiyat-${item.id}">
-          <button onclick="guncelle(${item.id})">Güncelle</button>
-          <button class="delete-btn" onclick="sil(${item.id})">Sil</button>
-        `
-        container.appendChild(div)
-      })
+      const { error } = await supabase.from('menu').insert([{ kategori, baslik, icerik, fiyat }]);
+      if (error) {
+        alert("Ekleme hatası: " + error.message);
+      } else {
+        alert("Ürün eklendi!");
+        location.reload();
+      }
     }
 
-    window.guncelle = async function(id) {
-      const kategori = document.getElementById(`kategori-${id}`).value
-      const baslik = document.getElementById(`baslik-${id}`).value
-      const icerik = document.getElementById(`icerik-${id}`).value
-      const fiyat = parseFloat(document.getElementById(`fiyat-${id}`).value)
+    async function sil(id) {
+      if (confirm("Bu ürünü silmek istiyor musunuz?")) {
+        const { error } = await supabase.from('menu').delete().eq('id', id);
+        if (error) {
+          alert("Silme hatası: " + error.message);
+        } else {
+          alert("Silindi");
+          location.reload();
+        }
+      }
+    }
 
+    async function guncelle(id, kategori, baslik, icerik, fiyat) {
       const { error } = await supabase
         .from('menu')
         .update({ kategori, baslik, icerik, fiyat })
-        .eq('id', id)
+        .eq('id', id);
 
-      if (error) alert('Hata: Güncelleme başarısız')
-      else alert('Başarıyla güncellendi')
-    }
-
-    window.sil = async function(id) {
-      if (!confirm("Silmek istediğinize emin misiniz?")) return
-
-      const { error } = await supabase
-        .from('menu')
-        .delete()
-        .eq('id', id)
-
-      if (error) alert('Hata: Silinemedi')
-      else menuYukle()
-    }
-
-    window.yeniUrunEkle = async function() {
-      const kategori = document.getElementById('yeni-kategori').value
-      const baslik = document.getElementById('yeni-baslik').value
-      const icerik = document.getElementById('yeni-icerik').value
-      const fiyat = parseFloat(document.getElementById('yeni-fiyat').value)
-
-      if (!kategori || !baslik || !icerik || isNaN(fiyat)) {
-        alert("Tüm alanları doldurun.")
-        return
-      }
-
-      const { error } = await supabase
-        .from('menu')
-        .insert([{ kategori, baslik, icerik, fiyat }])
-
-      if (error) alert('Hata: Eklenemedi')
-      else {
-        alert('Ürün eklendi')
-        document.getElementById('yeni-kategori').value = ''
-        document.getElementById('yeni-baslik').value = ''
-        document.getElementById('yeni-icerik').value = ''
-        document.getElementById('yeni-fiyat').value = ''
-        menuYukle()
+      if (error) {
+        alert("Güncelleme hatası: " + error.message);
+      } else {
+        alert("Güncellendi");
+        location.reload();
       }
     }
 
-    menuYukle()
+    async function listele() {
+      const { data, error } = await supabase.from('menu').select('*');
+      const container = document.getElementById('menuListesi');
+      container.innerHTML = '';
+
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('panel');
+
+        const kategoriInput = document.createElement('input');
+        kategoriInput.value = item.kategori;
+
+        const baslikInput = document.createElement('input');
+        baslikInput.value = item.baslik;
+
+        const icerikInput = document.createElement('input');
+        icerikInput.value = item.icerik;
+
+        const fiyatInput = document.createElement('input');
+        fiyatInput.type = 'number';
+        fiyatInput.value = item.fiyat;
+
+        const guncelleButton = document.createElement('button');
+        guncelleButton.textContent = 'Güncelle';
+        guncelleButton.classList.add('guncelle');
+        guncelleButton.onclick = () => {
+          const yeniKategori = kategoriInput.value;
+          const yeniBaslik = baslikInput.value;
+          const yeniIcerik = icerikInput.value;
+          const yeniFiyat = parseFloat(fiyatInput.value) || 0;
+          guncelle(item.id, yeniKategori, yeniBaslik, yeniIcerik, yeniFiyat);
+        };
+
+        const silButton = document.createElement('button');
+        silButton.textContent = 'Sil';
+        silButton.classList.add('sil');
+        silButton.onclick = () => sil(item.id);
+
+        div.appendChild(kategoriInput);
+        div.appendChild(baslikInput);
+        div.appendChild(icerikInput);
+        div.appendChild(fiyatInput);
+        div.appendChild(guncelleButton);
+        div.appendChild(silButton);
+
+        container.appendChild(div);
+      });
+    }
+
+    listele();
   </script>
 </body>
 </html>
