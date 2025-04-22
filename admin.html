@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menü Yönetim Paneli</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+    }
+    h2 {
+      color: #d32f2f;
+    }
+    .menu-form, .menu-row {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    input, button {
+      margin: 5px 0;
+      padding: 10px;
+      font-size: 15px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+      background: #d32f2f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+    .delete-btn {
+      background: #777;
+    }
+  </style>
+</head>
+<body>
+  <h2>Menü Yönetim Paneli</h2>
+
+  <div class="menu-form">
+    <h3>Yeni Ürün Ekle</h3>
+    <input type="text" id="yeni-kategori" placeholder="Kategori">
+    <input type="text" id="yeni-baslik" placeholder="Başlık">
+    <input type="text" id="yeni-icerik" placeholder="İçerik">
+    <input type="number" id="yeni-fiyat" placeholder="Fiyat">
+    <button onclick="yeniUrunEkle()">Ürün Ekle</button>
+  </div>
+
+  <div id="menu-list"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      'https://qcrbbvokdkyjjfsgffau.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjcmJidm9rZGt5ampmc2dmZmF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMTc1MTAsImV4cCI6MjA2MDg5MzUxMH0.TLCqjWowPhDs1s_rQoYFLOKH4iVAc6SV2zECIcPOAfo'
+    )
+
+    async function menuYukle() {
+      const { data, error } = await supabase.from('menu').select('*').order('id')
+      const container = document.getElementById('menu-list')
+      container.innerHTML = ''
+
+      data.forEach(item => {
+        const div = document.createElement('div')
+        div.className = 'menu-row'
+        div.innerHTML = `
+          <input type="text" value="${item.kategori}" id="kategori-${item.id}">
+          <input type="text" value="${item.baslik}" id="baslik-${item.id}">
+          <input type="text" value="${item.icerik}" id="icerik-${item.id}">
+          <input type="number" value="${item.fiyat}" id="fiyat-${item.id}">
+          <button onclick="guncelle(${item.id})">Güncelle</button>
+          <button class="delete-btn" onclick="sil(${item.id})">Sil</button>
+        `
+        container.appendChild(div)
+      })
+    }
+
+    window.guncelle = async function(id) {
+      const kategori = document.getElementById(`kategori-${id}`).value
+      const baslik = document.getElementById(`baslik-${id}`).value
+      const icerik = document.getElementById(`icerik-${id}`).value
+      const fiyat = parseFloat(document.getElementById(`fiyat-${id}`).value)
+
+      const { error } = await supabase
+        .from('menu')
+        .update({ kategori, baslik, icerik, fiyat })
+        .eq('id', id)
+
+      if (error) alert('Hata: Güncelleme başarısız')
+      else alert('Başarıyla güncellendi')
+    }
+
+    window.sil = async function(id) {
+      if (!confirm("Silmek istediğinize emin misiniz?")) return
+
+      const { error } = await supabase
+        .from('menu')
+        .delete()
+        .eq('id', id)
+
+      if (error) alert('Hata: Silinemedi')
+      else menuYukle()
+    }
+
+    window.yeniUrunEkle = async function() {
+      const kategori = document.getElementById('yeni-kategori').value
+      const baslik = document.getElementById('yeni-baslik').value
+      const icerik = document.getElementById('yeni-icerik').value
+      const fiyat = parseFloat(document.getElementById('yeni-fiyat').value)
+
+      if (!kategori || !baslik || !icerik || isNaN(fiyat)) {
+        alert("Tüm alanları doldurun.")
+        return
+      }
+
+      const { error } = await supabase
+        .from('menu')
+        .insert([{ kategori, baslik, icerik, fiyat }])
+
+      if (error) alert('Hata: Eklenemedi')
+      else {
+        alert('Ürün eklendi')
+        document.getElementById('yeni-kategori').value = ''
+        document.getElementById('yeni-baslik').value = ''
+        document.getElementById('yeni-icerik').value = ''
+        document.getElementById('yeni-fiyat').value = ''
+        menuYukle()
+      }
+    }
+
+    menuYukle()
+  </script>
+</body>
+</html>
